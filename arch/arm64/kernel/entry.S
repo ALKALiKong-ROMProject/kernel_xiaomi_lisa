@@ -773,6 +773,7 @@ el0_sync:
 	cmp	x24, #ESR_ELx_EC_BREAKPT_LOW	// debug exception in EL0
 	b.ge	el0_dbg
 	b	el0_inv
+ENDPROC(el0_sync)
 
 #ifdef CONFIG_COMPAT
 	.align	6
@@ -807,6 +808,8 @@ el0_sync_compat:
 	cmp	x24, #ESR_ELx_EC_BREAKPT_LOW	// debug exception in EL0
 	b.ge	el0_dbg
 	b	el0_inv
+ENDPROC(el0_sync_compat)
+
 el0_svc_compat:
 	gic_prio_kentry_setup tmp=x1
 	mov	x0, sp
@@ -817,10 +820,12 @@ el0_svc_compat:
 el0_irq_compat:
 	kernel_entry 0, 32
 	b	el0_irq_naked
+ENDPROC(el0_irq_compat)
 
 el0_error_compat:
 	kernel_entry 0, 32
 	b	el0_error_naked
+ENDPROC(el0_error_compat)
 
 el0_cp15:
 	/*
