@@ -16,6 +16,20 @@
 #include "bcm-voter.h"
 #include "icc-rpmh.h"
 
+#ifdef CONFIG_MACH_XIAOMI
+#define icc_mutex_lock(lock)	\
+do {							\
+	if (!oops_in_progress)		\
+		mutex_lock(lock);		\
+} while (0)
+
+#define icc_mutex_unlock(lock)	\
+do {							\
+	if (!oops_in_progress)		\
+		mutex_unlock(lock); 	\
+} while (0)
+#endif
+
 static LIST_HEAD(bcm_voters);
 
 /**
@@ -238,14 +252,23 @@ void qcom_icc_bcm_voter_add(struct bcm_voter *voter, struct qcom_icc_bcm *bcm)
 	if (!voter)
 		return;
 
+#ifdef CONFIG_MACH_XIAOMI
+	icc_mutex_lock(&voter->lock);
+#else
 	mutex_lock(&voter->lock);
+#endif
+
 	if (list_empty(&bcm->list))
 		list_add_tail(&bcm->list, &voter->commit_list);
 
 	if (list_empty(&bcm->ws_list))
 		list_add_tail(&bcm->ws_list, &voter->ws_list);
 
+#ifdef CONFIG_MACH_XIAOMI
+	icc_mutex_unlock(&voter->lock);
+#else
 	mutex_unlock(&voter->lock);
+#endif
 }
 EXPORT_SYMBOL(qcom_icc_bcm_voter_add);
 
@@ -272,7 +295,12 @@ int qcom_icc_bcm_voter_commit(struct bcm_voter *voter)
 	if (!voter)
 		return 0;
 
+#ifdef CONFIG_MACH_XIAOMI
+	icc_mutex_lock(&voter->lock);
+#else
 	mutex_lock(&voter->lock);
+#endif
+
 	list_for_each_entry(bcm, &voter->commit_list, list)
 		bcm_aggregate(bcm, voter->init);
 
@@ -366,7 +394,11 @@ out:
 		list_del_init(&bcm->list);
 
 	INIT_LIST_HEAD(&voter->commit_list);
+#ifdef CONFIG_MACH_XIAOMI
+	icc_mutex_unlock(&voter->lock);
+#else
 	mutex_unlock(&voter->lock);
+#endif
 	return ret;
 }
 EXPORT_SYMBOL(qcom_icc_bcm_voter_commit);
@@ -380,9 +412,17 @@ void qcom_icc_bcm_voter_clear_init(struct bcm_voter *voter)
 	if (!voter)
 		return;
 
+#ifdef CONFIG_MACH_XIAOMI
+	icc_mutex_lock(&voter->lock);
+#else
 	mutex_lock(&voter->lock);
+#endif
 	voter->init = false;
+#ifdef CONFIG_MACH_XIAOMI
+	icc_mutex_unlock(&voter->lock);
+#else
 	mutex_unlock(&voter->lock);
+#endif
 }
 EXPORT_SYMBOL(qcom_icc_bcm_voter_clear_init);
 
