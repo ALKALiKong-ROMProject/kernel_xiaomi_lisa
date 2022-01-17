@@ -134,6 +134,11 @@ static void clk_pm_runtime_put(struct clk_core *core)
 /***           locking             ***/
 static void clk_prepare_lock(void)
 {
+#ifdef CONFIG_MACH_XIAOMI
+	if (oops_in_progress)
+		return;
+#endif
+
 	if (!mutex_trylock(&prepare_lock)) {
 		if (prepare_owner == current) {
 			prepare_refcnt++;
@@ -149,6 +154,11 @@ static void clk_prepare_lock(void)
 
 static void clk_prepare_unlock(void)
 {
+#ifdef CONFIG_MACH_XIAOMI
+	if (oops_in_progress)
+		return;
+#endif
+
 	WARN_ON_ONCE(prepare_owner != current);
 	WARN_ON_ONCE(prepare_refcnt == 0);
 
@@ -162,6 +172,11 @@ static unsigned long clk_enable_lock(void)
 	__acquires(enable_lock)
 {
 	unsigned long flags;
+
+#ifdef CONFIG_MACH_XIAOMI
+	if (oops_in_progress)
+		return 1;
+#endif
 
 	/*
 	 * On UP systems, spin_trylock_irqsave() always returns true, even if
@@ -189,6 +204,11 @@ static unsigned long clk_enable_lock(void)
 static void clk_enable_unlock(unsigned long flags)
 	__releases(enable_lock)
 {
+#ifdef CONFIG_MACH_XIAOMI
+	if (oops_in_progress)
+		return;
+#endif
+
 	WARN_ON_ONCE(enable_owner != current);
 	WARN_ON_ONCE(enable_refcnt == 0);
 
@@ -922,9 +942,22 @@ static int clk_core_prepare_lock(struct clk_core *core)
 {
 	int ret;
 
+#ifdef CONFIG_MACH_XIAOMI
+	if (!oops_in_progress) {
+#endif
 	clk_prepare_lock();
+#ifdef CONFIG_MACH_XIAOMI
+	}
+#endif
+
 	ret = clk_core_prepare(core);
+#ifdef CONFIG_MACH_XIAOMI
+	if (!oops_in_progress) {
+#endif
 	clk_prepare_unlock();
+#ifdef CONFIG_MACH_XIAOMI
+	}
+#endif
 
 	return ret;
 }
