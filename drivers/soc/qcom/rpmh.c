@@ -14,6 +14,9 @@
 #include <linux/spinlock.h>
 #include <linux/types.h>
 #include <linux/wait.h>
+#ifdef CONFIG_MACH_XIAOMI
+#include <linux/delay.h>
+#endif
 
 #include <soc/qcom/rpmh.h>
 
@@ -233,7 +236,13 @@ static int __rpmh_write(const struct device *dev, enum rpmh_state state,
 	rpm_msg->msg.state = state;
 
 	if (state == RPMH_ACTIVE_ONLY_STATE) {
+#ifdef CONFIG_MACH_XIAOMI
+		if (!oops_in_progress) {
+#endif
 		WARN_ON(irqs_disabled());
+#ifdef CONFIG_MACH_XIAOMI
+		}
+#endif
 		ret = rpmh_rsc_send_data(ctrlr_to_drv(ctrlr), &rpm_msg->msg);
 	} else {
 		/* Clean up our call by spoofing tx_done */
@@ -331,14 +340,28 @@ int rpmh_write(const struct device *dev, enum rpmh_state state,
 	rpm_msg.msg.num_cmds = n;
 
 	ret = __rpmh_write(dev, state, &rpm_msg);
+#ifdef CONFIG_MACH_XIAOMI
+	if (!oops_in_progress) {
+#endif
 	if (ret)
 		return ret;
+#ifdef CONFIG_MACH_XIAOMI
+	}
+#endif
 
+#ifdef CONFIG_MACH_XIAOMI
+	if (!oops_in_progress) {
+#endif
 	ret = wait_for_completion_timeout(&compl, RPMH_TIMEOUT_MS);
 	if (!ret) {
 		rpmh_rsc_debug(ctrlr_to_drv(ctrlr), &compl);
 		return -ETIMEDOUT;
 	}
+#ifdef CONFIG_MACH_XIAOMI
+	} else {
+		mdelay(100);
+	}
+#endif
 
 	return 0;
 }
@@ -477,6 +500,9 @@ int rpmh_write_batch(const struct device *dev, enum rpmh_state state,
 
 	time_left = RPMH_TIMEOUT_MS;
 	while (i--) {
+#ifdef CONFIG_MACH_XIAOMI
+		if (!oops_in_progress) {
+#endif
 		time_left = wait_for_completion_timeout(&compls[i], time_left);
 		if (!time_left) {
 			/*
@@ -487,6 +513,11 @@ int rpmh_write_batch(const struct device *dev, enum rpmh_state state,
 			rpmh_rsc_debug(ctrlr_to_drv(ctrlr), &compls[i]);
 			BUG_ON(1);
 		}
+#ifdef CONFIG_MACH_XIAOMI
+		} else {
+			mdelay(100);
+		}
+#endif
 	}
 
 exit:
