@@ -1241,6 +1241,11 @@ bool blk_mq_dispatch_rq_list(struct request_queue *q, struct list_head *list,
 	if (list_empty(list))
 		return false;
 
+#ifdef CONFIG_MACH_XIAOMI
+	if (oops_in_progress)
+		return false;
+#endif
+
 	WARN_ON(!list_is_singular(list) && got_budget);
 
 	/*
