@@ -85,6 +85,55 @@ enum dev_cmd_type {
 	DEV_CMD_TYPE_QUERY		= 0x1,
 };
 
+#ifdef CONFIG_MACH_XIAOMI
+#define ufs_spin_lock_irqsave(lock, flags)	\
+do {										\
+	if (!oops_in_progress)					\
+		spin_lock_irqsave(lock, flags);		\
+} while (0)
+
+#define ufs_spin_unlock_irqrestore(lock, flags)		\
+do {												\
+	if (!oops_in_progress)							\
+		spin_unlock_irqrestore(lock, flags);		\
+} while (0)
+
+#define ufs_spin_lock(lock)	\
+do {						\
+	if (!oops_in_progress)	\
+		spin_lock(lock);	\
+} while (0)
+
+#define ufs_spin_unlock(lock)	\
+do {							\
+	if (!oops_in_progress)		\
+		spin_unlock(lock);		\
+} while (0)
+
+#else //CONFIG_MACH_XIAOMI
+
+#define ufs_spin_lock_irqsave(lock, flags)	\
+do {										\
+	spin_lock_irqsave(lock, flags);			\
+} while (0)
+
+#define ufs_spin_unlock_irqrestore(lock, flags)		\
+do {												\
+	spin_unlock_irqrestore(lock, flags);			\
+} while (0)
+
+#define ufs_spin_lock(lock)	\
+do {						\
+	spin_lock(lock);		\
+} while (0)
+
+#define ufs_spin_unlock(lock)	\
+do {							\
+	spin_unlock(lock);			\
+} while (0)
+
+#endif //CONFIG_MACH_XIAOMI
+
 /**
  * struct uic_command - UIC command structure
  * @command: UIC command
@@ -1275,6 +1324,9 @@ int ufshcd_query_descriptor_retry(struct ufs_hba *hba,
 				  enum desc_idn idn, u8 index,
 				  u8 selector,
 				  u8 *desc_buf, int *buf_len);
+#ifdef CONFIG_MACH_XIAOMI
+int ufshcd_get_hynix_hr(struct scsi_device *sdev, u8 *buf, u32 size);
+#endif
 int ufshcd_read_desc_param(struct ufs_hba *hba,
 			   enum desc_idn desc_id,
 			   int desc_index,
