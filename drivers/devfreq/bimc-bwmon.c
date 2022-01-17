@@ -752,7 +752,14 @@ static irqreturn_t bwmon_intr_thread(int irq, void *dev)
 {
 	struct bwmon *m = dev;
 
+#ifdef CONFIG_MACH_XIAOMI
+	if (!oops_in_progress) {
+#endif
 	update_bw_hwmon(&m->hw);
+#ifdef CONFIG_MACH_XIAOMI
+	}
+#endif
+
 	return IRQ_HANDLED;
 }
 

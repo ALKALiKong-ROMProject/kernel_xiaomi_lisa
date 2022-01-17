@@ -339,6 +339,11 @@ int update_devfreq(struct devfreq *devfreq)
 	int err = 0;
 	u32 flags = 0;
 
+#ifdef CONFIG_MACH_XIAOMI
+	if (oops_in_progress)
+		return 0;
+#endif
+
 	if (!mutex_is_locked(&devfreq->lock)) {
 		WARN(true, "devfreq->lock must be locked by the caller.\n");
 		return -EINVAL;
