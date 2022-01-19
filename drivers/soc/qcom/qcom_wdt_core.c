@@ -833,6 +833,10 @@ static irqreturn_t qcom_wdt_bark_handler(int irq, void *dev_id)
 	nanosec_rem = do_div(wdog_dd->last_pet, 1000000000);
 	dev_info(wdog_dd->dev, "QCOM Apps Watchdog last pet at %lu.%06lu\n",
 			(unsigned long) wdog_dd->last_pet, nanosec_rem / 1000);
+#ifdef CONFIG_QGKI_SYSTEM
+	console_verbose();
+	show_state_filter(TASK_UNINTERRUPTIBLE);
+#endif
 	if (wdog_dd->do_ipi_ping)
 		qcom_wdt_dump_cpu_alive_mask(wdog_dd);
 
