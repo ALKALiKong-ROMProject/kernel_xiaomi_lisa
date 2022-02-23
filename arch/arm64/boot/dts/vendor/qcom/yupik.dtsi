@@ -35,7 +35,7 @@
 	#size-cells = <2>;
 
 	chosen {
-		bootargs = "log_buf_len=256K rcupdate.rcu_expedited=1 rcu_nocbs=0-7 kpti=off noirqdebug quiet fsa4480_i2c.async_probe=1";
+		bootargs = "log_buf_len=256K rcupdate.rcu_expedited=1 rcu_nocbs=0-7 kpti=off noirqdebug quiet";
 	};
 
 	memory { device_type = "memory"; reg = <0 0 0 0>; };
@@ -60,6 +60,10 @@
 		swr0 = &swr0;
 		swr1 = &swr1;
 		swr2 = &swr2;
+		i2c0 = &qupv3_se1_i2c;
+		i2c1 = &qupv3_se3_i2c;
+		i2c2 = &qupv3_se4_i2c;
+		i2c3 = &qupv3_se9_i2c;
 	};
 
 	firmware: firmware {};
@@ -404,7 +408,7 @@
 		reg = <0x0 0x9ae00000 0x0 0x1900000>;
 	};
 
-	pil_cdsp_mem: cdsp@9c700000 {
+        pil_cdsp_mem: cdsp@9c700000 {
 		no-map;
 		reg = <0x0 0x9c700000 0x0 0x1e00000>;
 	};
@@ -416,22 +420,22 @@
 
 	pil_trustedvm_mem: pil_trustedvm_region@d0800000 {
 		no-map;
-		reg = <0x0 0xd0800000 0x0 0x76f7000>;
+		reg = <0x00 0xd0800000 0x00 0x76f7000>;
 	};
 
 	qrtr_shbuf: qrtr-shmem {
 		no-map;
-		reg = <0x0 0xd7ef7000 0x0 0x9000>;
+		reg = <0x00 0xd7ef7000 0x00 0x9000>;
 	};
 
 	chan0_shbuf: neuron_block@0 {
 		no-map;
-		reg = <0x0 0xd7f00000 0x0 0x80000>;
+		reg = <0x00 0xd7f00000 0x00 0x80000>;
 	};
 
 	chan1_shbuf: neuron_block@1 {
 		no-map;
-		reg = <0x0 0xd7f80000 0x0 0x80000>;
+		reg = <0x00 0xd7f80000 0x00 0x80000>;
 	};
 
 	user_contig_mem: user_contig_region {
@@ -478,7 +482,13 @@
 		alignment = <0 0x400000>;
 		size = <0 0x8c00000>;
 	};
-
+	qcom: ramoops {
+		compatible = "ramoops";
+		reg = <0x0 0xb0000000 0x0 0x400000>;
+		pmsg-size = <0x200000>;
+		console-size = <0x200000>;
+		mem-type = <2>;
+	};
 	/* global autoconfigured region for contiguous allocations */
 	linux,cma {
 		compatible = "shared-dma-pool";
@@ -487,6 +497,13 @@
 		alignment = <0x0 0x400000>;
 		size = <0x0 0x2000000>;
 		linux,cma-default;
+	};
+
+	dump_mem: mem_dump_region {
+		compatible = "shared-dma-pool";
+		alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
+		reusable;
+		size = <0 0x2c00000>;
 	};
 
 	audio_cma_mem: audio_cma_region {
@@ -2994,16 +3011,6 @@
 		spm-level = <3>;
 
 		status = "disabled";
-
-		qos0 {
-			mask = <0xf0>;
-			vote = <65>;
-		};
-
-		qos1 {
-			mask = <0x0f>;
-			vote = <59>;
-		};
 	};
 
 	cpu_pmu: cpu-pmu {
@@ -4671,7 +4678,7 @@
 
 	mem_dump {
 		compatible = "qcom,mem-dump";
-		status = "disabled";
+		memory-region = <&dump_mem>;
 
 		c0_context {
 			qcom,dump-size = <0x800>;
@@ -5042,6 +5049,11 @@
 			bits = <5 1>;
 		};
 
+		gpu_model_bin: gpu_model_bin@1e9 {
+			reg = <0x1e9 0x2>;
+			bits = <5 8>;
+		};
+
 		feat_conf_m7: feat_conf_m7@6020 {
 			reg = <0x6020 0x4>;
 		};
@@ -5292,6 +5304,7 @@
 		qcom,bw-monitor-supported;
 		qcom,lan-rx-napi;
 		qcom,tx-napi;
+		qcom,wan-use-skb-page;
 		qcom,rmnet-ctl-enable;
 		qcom,use-gsi-ipa-fw = "yupik_ipa_fws";
 		qcom,tx-wrapper-cache-max-size = <400>;
